@@ -24,7 +24,7 @@ bool touched = false;
 void setup() {
     Serial.begin(115200);
     pixels.begin();
-    pixels.setBrightness(120);
+    pixels.setBrightness(80);
 
     serverSetup();
 }
