@@ -242,6 +242,37 @@ class PopInEffect {
         }
 };
 
+#if 0
+Effect glisten = [](ard_time_t t, int i){
+    return pixels.Color(random(255), random(255), random(255));
+};
+#else
+
+class GlistenEffect {
+    private:
+        color_t _pixels[NUM];
+        ard_time_t _markTime;
+        ard_time_t _frameTime;
+        void resetPixels() {
+            _markTime = millis();
+            for (unsigned int i=0; i != NUM; ++i) {
+                _pixels[i] = pixels.Color(random(256), random(256), random(256));
+            }
+        }
+    public:
+        GlistenEffect(ard_time_t frameTime = 50) : _frameTime(frameTime), _markTime(millis()) {
+            resetPixels();
+        }
+        color_t operator ()(ard_time_t t, int i){
+            if (t - _frameTime > _markTime) {
+                resetPixels();
+            }
+            return _pixels[i];
+        }
+};
+Effect glisten = GlistenEffect();
+#endif
+
 //
 
 Effect rainbot = makeRainbow(3., 2);
@@ -252,6 +283,7 @@ std::list<Effect> colors = {solidRed, solidGreen, solidWhite};
 Effect redgreen = EffectCycle<std::list<Effect>::iterator>(colors.begin(), colors.end(), 0.25);
 
 std::list<Effect> allEffects = {
+    glisten,
     PopInEffect< cycling_effect_list_iterator >(makeColorCycler(), 3, 4.5),
     WindingEffect< cycling_effect_list_iterator >(4000, 1000, makeColorCycler()),
     rainbot
