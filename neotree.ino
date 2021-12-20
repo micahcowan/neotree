@@ -35,6 +35,6 @@ void loop() {
     doPixels(*currentEffect);
     ard_time_t u = millis();
 
-    ard_time_t d = (u > t + DELAYVAL)? DELAYVAL - (u - t): 1u;
+    ard_time_t d = (u > t + DELAYVAL)? 1u : DELAYVAL - (u - t);
     delay(d);
 }
