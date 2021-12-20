@@ -36,6 +36,7 @@ void serverSetup() {
 
     server.on("/", handleRoot);
     server.begin();
+    MDNS.addService("http", "tcp", 80);
 
     // half sec of blue when connected
     pixels.fill(pixels.Color(0, 0, 255));
