@@ -13,8 +13,8 @@ void fail(void) {
 }
 
 void handleRoot() {
-    touched = !touched;
-    server.send(200, "text/plain", String("Red/green is ") + (touched? "on" : "off"));
+    ++currentEffect;
+    server.send(200, "text/plain", "Yup, okay.");
 }
 
 void serverSetup() {

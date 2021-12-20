@@ -3,8 +3,15 @@
 // Lighting effect fns to run on the light string
 
 #include <functional>
-#include <vector>
+#include <list>
 typedef std::function<color_t(ard_time_t, int)> Effect;
+
+void doPixels(Effect &effect, ard_time_t t = millis()) {
+    for (unsigned int i = 0; i != NUM; ++i) {
+        pixels.setPixelColor(i, effect(t, i));
+    }
+    pixels.show();
+}
 
 color_t colorRed    = pixels.Color(255, 0, 0);
 color_t colorOrange = pixels.Color(255, 128, 0);
@@ -28,9 +35,17 @@ Effect  solidOrange = makeSolid(colorOrange);
 Effect  solidYellow = makeSolid(colorYellow);
 Effect  solidGreen  = makeSolid(colorGreen);
 Effect  solidCyan   = makeSolid(colorCyan);
-Effect  solidBlue = makeSolid(colorBlue);
+Effect  solidBlue   = makeSolid(colorBlue);
 Effect  solidIndigo = makeSolid(colorIndigo);
 Effect  solidViolet = makeSolid(colorViolet);
+Effect  solidWhite  = makeSolid(colorWhite);
+Effect  solidBlack  = makeSolid(colorBlack);
+
+std::list<Effect> allColors = {
+    solidRed, solidGreen, solidIndigo,
+    solidOrange, solidCyan, solidViolet,
+    solidYellow, solidBlue
+};
 
 //
 
@@ -74,6 +89,10 @@ class cycling_iterator {
        }
 };
 
+cycling_iterator<std::list<Effect>::iterator> makeColorCycler(void) {
+    return cycling_iterator<std::list<Effect>::iterator>(allColors.begin(), allColors.end());
+}
+
 template <class iter>
 class EffectCycle {
     private:
@@ -100,11 +119,63 @@ class EffectCycle {
         }
 };
 
+template <class EffectIter>
+class WindingEffect {
+    private:
+        const ard_time_t  _windTime;  // How long (ms) does it take to wind from the start of the string to the end?
+        const ard_time_t  _waitTime;  // How long (ms) to wait after winding is completed, to start the next
+        ard_time_t  _transStart;
+        ard_time_t  _timeMark;  // detects same time given successively during iteration, so we avoid recalculating threshold
+        int threshold = 0;
+
+        EffectIter  _effectIter;
+        Effect one = solidBlack;
+        Effect two;
+    public:
+        WindingEffect(ard_time_t windTime, ard_time_t waitTime, EffectIter effectIter) : 
+                _windTime(windTime), _waitTime(waitTime), _transStart(millis()), _effectIter(effectIter) {
+            two = *_effectIter;
+            ++_effectIter;
+        }
+        color_t operator()(ard_time_t t, int i) {
+            if (t > _transStart + _windTime + _waitTime) {
+                // Time to pop the next effect
+                _transStart = millis();
+                one = two;
+                two = *_effectIter;
+                ++_effectIter;
+                return one(t, i);
+            }
+            else if (t > _transStart + _windTime) {
+                // We're in wait time
+                return two(t, i);
+            }
+            else {
+                if (_timeMark != t) {
+                    _timeMark = t;
+                    // get the fraction of the way into the transition
+                    // we are, and set threshold to that
+                    double frac = 1. * (t - _transStart) / _windTime;
+                    threshold = NUM * frac;
+                }
+                return  i > threshold? one(t, i) : two(t, i);
+            }
+        }
+};
+
 //
 
 Effect rainbot = makeRainbow(3., 2);
 
-const std::vector<Effect> colors = {solidRed, solidGreen, solidBlue};
+std::list<Effect> colors = {solidRed, solidGreen, solidWhite};
 
 // XXX: misnamed now
-Effect redgreen = EffectCycle<std::vector<Effect>::const_iterator>(colors.begin(), colors.end(), 0.25);
+Effect redgreen = EffectCycle<std::list<Effect>::iterator>(colors.begin(), colors.end(), 0.25);
+
+std::list<Effect> allEffects = {
+    WindingEffect< cycling_iterator<std::list<Effect>::iterator> >(4000, 1000, makeColorCycler())
+  , rainbot
+  , redgreen
+};
+
+cycling_iterator<std::list<Effect>::iterator> currentEffect(allEffects.begin(), allEffects.end());

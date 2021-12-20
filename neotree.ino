@@ -15,7 +15,6 @@ typedef uint32_t  color_t;
 typedef unsigned long ard_time_t;
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUM, PIN, NEO_RGB | NEO_KHZ800);
-bool touched = false;
 
 #include "wifipass.h"
 #include "neotree_effects.h"    // defines "Effect", "cur_effect"
@@ -30,17 +29,12 @@ void setup() {
 }
 
 void loop() {
+    ard_time_t t = millis();
     server.handleClient();
 
-    ard_time_t t = millis();
-    //pixels.rainbow(65535. * atime / TOTALTIME);
-    for (int i=0; i != NUM; ++i) {
-        if (!touched)
-            pixels.setPixelColor(i, rainbot(t, i));
-        else
-            pixels.setPixelColor(i, redgreen(t, i));
-    }
-    pixels.show();
+    doPixels(*currentEffect);
+    ard_time_t u = millis();
 
-    delay(DELAYVAL);
+    ard_time_t d = (u > t + DELAYVAL)? DELAYVAL - (u - t): 1u;
+    delay(d);
 }
