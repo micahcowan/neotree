@@ -224,8 +224,8 @@ class PopInEffect {
             }
             else if (t > effStart) {
                 // How far into the strip?
-                double frac = (t - effStart) / _completeDotsTime;
-                if (1. * i / NUM >= frac) {
+                double frac = 1. * (t - effStart) / _completeDotsTime;
+                if (1. * i / NUM < frac) {
                     lit = true;
                 }
             }
