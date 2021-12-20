@@ -25,12 +25,12 @@ void setup() {
     pixels.begin();
     pixels.setBrightness(80);
 
-    serverSetup();
+    //serverSetup();
 }
 
 void loop() {
     ard_time_t t = millis();
-    server.handleClient();
+    //server.handleClient();
 
     doPixels(*currentEffect);
     ard_time_t u = millis();
