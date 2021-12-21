@@ -49,7 +49,7 @@ std::list<Effect> allColors = {
 
 //
 
-Effect makeRainbow(
+Effect makeSimpleRainbow(
         double      runt    // how long (s) for rainbow to take to traverse entire string of lights
     ,   double      n       // how many rainbows to complete across the string
 ) {
@@ -60,6 +60,31 @@ Effect makeRainbow(
         return pixels.ColorHSV(phase * 65536);
     });
 }
+
+class SlinkingRainbow {
+        double _numRainbows;        // How many complete rainbows to appear at one time on the tree
+        double _shiftAmount;        // How much to shift position by, as cos wave goes from 1 to -1
+        ard_time_t _waveLength;     // How long (ms) should it take to complete a cycle.
+
+        ard_time_t _markTime = 0;
+        double _curShift = 0.;      // saved calculation of shift amount based on time
+    public:
+        SlinkingRainbow(double n = 2, double shift = 15, ard_time_t waveLength = 90000)
+            : _numRainbows(n), _shiftAmount(shift), _waveLength(waveLength)
+        { }
+
+        color_t operator()(ard_time_t t, int i) {
+            if (t != _markTime) {
+                // recalculate time-based shift
+                _markTime = t;
+                _curShift = fmod(_shiftAmount/2 * cos(6.283185 * (t % _waveLength)/_waveLength), 1.0);
+            }
+            double shift = _curShift + (_numRainbows * i)/NUM;
+            shift = fmod(shift, 1.0);
+            return pixels.ColorHSV(shift * 65536);
+        }
+};
+Effect rainbow = SlinkingRainbow();
 
 template <class orig_iter_t>
 class cycling_iterator {
@@ -275,18 +300,16 @@ Effect glisten = GlistenEffect();
 
 //
 
-Effect rainbot = makeRainbow(3., 2);
-
 std::list<Effect> colors = {solidRed, solidGreen, solidWhite};
 
 // XXX: misnamed now
 Effect redgreen = EffectCycle<std::list<Effect>::iterator>(colors.begin(), colors.end(), 0.25);
 
 std::list<Effect> allEffects = {
+    rainbow,
     glisten,
     PopInEffect< cycling_effect_list_iterator >(makeColorCycler(), 3, 4.5),
-    WindingEffect< cycling_effect_list_iterator >(4000, 1000, makeColorCycler()),
-    rainbot
+    WindingEffect< cycling_effect_list_iterator >(4000, 1000, makeColorCycler())
 };
 
 cycling_iterator<std::list<Effect>::iterator> currentEffect(allEffects.begin(), allEffects.end());
