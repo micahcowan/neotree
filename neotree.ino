@@ -16,6 +16,9 @@ typedef unsigned long ard_time_t;
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUM, PIN, NEO_RGB | NEO_KHZ800);
 
+ard_time_t  lastChangeTime = 0;
+#define CHANGE_TIME 600000  // 10 mins
+
 #include "wifipass.h"
 #include "neotree_effects.h"    // defines "Effect", "cur_effect"
 #include "neotree_server.h"     // defines "server"
@@ -25,12 +28,17 @@ void setup() {
     pixels.begin();
     pixels.setBrightness(80);
 
-    //serverSetup();
+    serverSetup();
 }
 
 void loop() {
     ard_time_t t = millis();
-    //server.handleClient();
+    server.handleClient();
+
+    if (t - lastChangeTime > CHANGE_TIME) {
+        lastChangeTime = t;
+        ++currentEffect;
+    }
 
     doPixels(*currentEffect);
     ard_time_t u = millis();

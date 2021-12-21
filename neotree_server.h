@@ -14,6 +14,7 @@ void fail(void) {
 
 void handleRoot() {
     ++currentEffect;
+    lastChangeTime = millis();
     server.send(200, "text/plain", "Yup, okay.");
 }
 
